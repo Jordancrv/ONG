@@ -1,0 +1,24 @@
+{
+  "name": "investigaods-frontend",
+  "dockerComposeFile": ["../../docker-compose.yml","../../docker-compose.override.dev.yml"],
+  "service": "frontend",
+  "workspaceFolder": "/app",
+  "runServices": ["db", "phpmyadmin", "backend", "frontend"],
+  "overrideCommand": false,
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [5173, 3000, 8081, 3306],
+  "remoteEnv": {
+    "CHOKIDAR_USEPOLLING": "true",
+    "WATCHPACK_POLLING": "true"
+  },
+  "postCreateCommand": "npm i && npm run dev -- --host 0.0.0.0",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

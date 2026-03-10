@@ -1,0 +1,86 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: investigaods_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: investigaods
+      MYSQL_USER: investigaods
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    command: ["mysqld", "--default-authentication-plugin=mysql_native_password"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${DB_USER:-investigaods}
+      PMA_PASSWORD: ${DB_PASS:-secret}
+    ports:
+      - "8081:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: investigaods_backend
+    env_file:
+      - ./backend/.env
+    command: sh -c "npm run prebuild && npm run schema:sync && npm run seed && npm run start:dev"
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: investigaods_frontend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3000
+    ports:
+      - "5173:5173"
+    # depends_on:
+    #   - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  ia:
+    build:
+      context: ./ia
+      dockerfile: Dockerfile
+    container_name: investigaods_ia
+    env_file:
+      - ./ia/config/.env
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+    volumes:
+      - ./ia:/app
+      - /app/__pycache__
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:5001/api/health')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    
+volumes:
+  db_data:
