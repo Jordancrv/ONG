@@ -1,0 +1,10 @@
+# archivos de control
+*.ctl
+
+# sockets
+*.sock
+
+# procesos
+*.pid
+
+investigaODS/ia/src/gunicorn.ctl
