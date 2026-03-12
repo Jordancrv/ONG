@@ -13,7 +13,11 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix",
     "test": "jest",
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
-    "schema:sync": "ts-node -r tsconfig-paths/register src/scripts/schema-sync.ts"
+    "schema:sync": "ts-node -r tsconfig-paths/register src/scripts/schema-sync.ts",
+    "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate src/database/migrations/Auto",
+    "migration:create": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:create src/database/migrations/Manual",
+    "migration:run": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run",
+    "migration:revert": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

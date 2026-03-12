@@ -6,7 +6,7 @@ import * as entities from '../entities';
 
 const config = configuration();
 
-export const AppDataSource = new DataSource({
+const AppDataSource = new DataSource({
   type: 'mysql',
   host: config.database.host,
   port: config.database.port,
@@ -16,7 +16,10 @@ export const AppDataSource = new DataSource({
   logging: config.database.logging,
   synchronize: false,
   entities: Object.values(entities),
-  migrations: ['dist/database/migrations/*.js'],
+  migrations: [
+    'src/database/migrations/*.{ts,js}',
+    'dist/database/migrations/*.js',
+  ],
   namingStrategy: new SnakeNamingStrategy(),
 });
 

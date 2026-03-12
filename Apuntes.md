@@ -1,95 +1,5 @@
 # Apuntes de Base de Datos
 
-
-## PRIORIDADES DE IMPLEMENTACION (Semana 1-2)
-
-### Prioridad Alta (Integridad de datos)
-- SUBSCRIPTIONS: user_id y plan_id en NOT NULL.
-- COURSES: slug en NOT NULL + UNIQUE, owner_id en NOT NULL.
-- COURSE_MODULES: course_id en NOT NULL + UNIQUE(course_id, position).
-- LESSONS: module_id en NOT NULL + UNIQUE(module_id, position).
-- ENROLLMENTS: user_id y course_id en NOT NULL + UNIQUE(user_id, course_id).
-- LESSON_PROGRESS: user_id y lesson_id en NOT NULL + UNIQUE(user_id, lesson_id).
-- ATTEMPTS: quiz_id y user_id en NOT NULL.
-- ANSWERS: attempt_id y question_id en NOT NULL (option_id nullable solo en OPEN).
-
-### Prioridad Media (Consistencia funcional)
-- QUESTIONS: quiz_id en NOT NULL.
-- OPTIONS: question_id en NOT NULL.
-- LIVE_CLASSES y COHORTS: reglas de validacion de fechas (end_at > start_at).
-- COURSES: estandarizar level y language (enum o tabla catalogo).
-- TAGS: normalizacion de nombre para evitar duplicados semanticos.
-
-### Prioridad Baja (Evolutivo y performance)
-- USERS: evaluar status/deleted_at para Soft Delete.
-- MEMBERSHIP_PLANS: campos de monetizacion (price_monthly, currency).
-- AUDIT_LOGS: evaluar uso de updated_at segun politica de auditoria.
-- CHALLENGE_SUBMISSIONS: agregar submitted_at y trazabilidad de evaluacion.
-
-
-## PLAN DE MIGRACIONES INICIALES (TypeORM)
-
-### Objetivo
-- Crear migraciones incrementales y seguras para aplicar cambios sin perder datos.
-
-### Preparacion tecnica (backend)
-- El proyecto ya tiene DataSource en backend/src/database/data-source.ts.
-- Actualmente no hay scripts de migration en package.json (solo schema:sync y seed).
-
-### Scripts recomendados para package.json
-- migration:generate: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate src/database/migrations/Auto
-- migration:create: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:create src/database/migrations/Manual
-- migration:run: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run
-- migration:revert: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert
-
-### Orden sugerido de migraciones iniciales
-
-#### Migracion 001 - Integridad de FKs criticas
-- Alterar a NOT NULL:
-	- subscriptions.user_id, subscriptions.plan_id
-	- courses.owner_id
-	- course_modules.course_id
-	- lessons.module_id
-	- enrollments.user_id, enrollments.course_id
-	- lesson_progress.user_id, lesson_progress.lesson_id
-	- attempts.quiz_id, attempts.user_id
-	- answers.attempt_id, answers.question_id
-	- questions.quiz_id
-	- options.question_id
-
-#### Migracion 002 - Unicidad y orden funcional
-- Agregar restricciones UNIQUE:
-	- courses.slug
-	- enrollments(user_id, course_id)
-	- lesson_progress(user_id, lesson_id)
-	- user_points(user_id, course_id)
-	- course_modules(course_id, index)
-	- lessons(module_id, index)
-
-#### Migracion 003 - Validaciones de rango y fechas
-- Validar progress_pct en rango 0-100 (si aplica CHECK o validar en backend).
-- Validar end_at > start_at para live_classes y cohorts (regla en backend o constraint segun soporte).
-
-#### Migracion 004 - Estandarizacion de naming
-- Renombrar index a position en:
-	- course_modules
-	- lessons
-- Ajustar codigo backend y DTOs para reflejar el cambio.
-
-#### Migracion 005 - Auditoria y negocio evolutivo
-- Crear tabla subscriptions_logs con snapshot de precio y moneda.
-- Evaluar agregar status/deleted_at en users.
-
-### Checklist para ejecutar cada migracion
-- 1. Backup de BD antes de correr migration:run.
-- 2. Ejecutar migracion en entorno local.
-- 3. Validar integridad con consultas de conteo y null checks.
-- 4. Probar endpoints criticos (auth, courses, enrollments, quizzes).
-- 5. Registrar evidencia en el documento de auditoria.
-
-
-
-
 ## TABLAS:
 
 ### USERS (Gestión de cuentas del sistema)
@@ -487,3 +397,187 @@
 - user_id NOT NULL
 - course_id NOT NULL
 - UNIQUE(user_id, course_id)
+
+
+## PRIORIDADES DE IMPLEMENTACION (Semana 1-2)
+
+### Prioridad Alta (Integridad de datos)
+- SUBSCRIPTIONS: user_id y plan_id en NOT NULL.
+- COURSES: slug en NOT NULL + UNIQUE, owner_id en NOT NULL.
+- COURSE_MODULES: course_id en NOT NULL + UNIQUE(course_id, position).
+- LESSONS: module_id en NOT NULL + UNIQUE(module_id, position).
+- ENROLLMENTS: user_id y course_id en NOT NULL + UNIQUE(user_id, course_id).
+- LESSON_PROGRESS: user_id y lesson_id en NOT NULL + UNIQUE(user_id, lesson_id).
+- ATTEMPTS: quiz_id y user_id en NOT NULL.
+- ANSWERS: attempt_id y question_id en NOT NULL (option_id nullable solo en OPEN).
+
+### Prioridad Media (Consistencia funcional)
+- QUESTIONS: quiz_id en NOT NULL.
+- OPTIONS: question_id en NOT NULL.
+- LIVE_CLASSES y COHORTS: reglas de validacion de fechas (end_at > start_at).
+- COURSES: estandarizar level y language (enum o tabla catalogo).
+- TAGS: normalizacion de nombre para evitar duplicados semanticos.
+
+### Prioridad Baja (Evolutivo y performance)
+- USERS: evaluar status/deleted_at para Soft Delete.
+- MEMBERSHIP_PLANS: campos de monetizacion (price_monthly, currency).
+- AUDIT_LOGS: evaluar uso de updated_at segun politica de auditoria.
+- CHALLENGE_SUBMISSIONS: agregar submitted_at y trazabilidad de evaluacion.
+
+
+## PLAN DE MIGRACIONES INICIALES (TypeORM)
+
+### Objetivo
+- Crear migraciones incrementales y seguras para aplicar cambios sin perder datos.
+
+### Preparacion tecnica (backend)
+- El proyecto ya tiene DataSource en backend/src/database/data-source.ts.
+- Actualmente no hay scripts de migration en package.json (solo schema:sync y seed).
+
+### Scripts recomendados para package.json
+- migration:generate: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate src/database/migrations/Auto
+- migration:create: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:create src/database/migrations/Manual
+- migration:run: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run
+- migration:revert: typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert
+
+### Orden sugerido de migraciones iniciales
+
+#### Migracion 001 - Integridad de FKs criticas
+- Alterar a NOT NULL:
+	- subscriptions.user_id, subscriptions.plan_id
+	- courses.owner_id
+	- course_modules.course_id
+	- lessons.module_id
+	- enrollments.user_id, enrollments.course_id
+	- lesson_progress.user_id, lesson_progress.lesson_id
+	- attempts.quiz_id, attempts.user_id
+	- answers.attempt_id, answers.question_id
+	- questions.quiz_id
+	- options.question_id
+
+#### Migracion 002 - Unicidad y orden funcional
+- Agregar restricciones UNIQUE:
+	- courses.slug
+	- enrollments(user_id, course_id)
+	- lesson_progress(user_id, lesson_id)
+	- user_points(user_id, course_id)
+	- course_modules(course_id, index)
+	- lessons(module_id, index)
+
+#### Migracion 003 - Validaciones de rango y fechas
+- Validar progress_pct en rango 0-100 (si aplica CHECK o validar en backend).
+- Validar end_at > start_at para live_classes y cohorts (regla en backend o constraint segun soporte).
+
+#### Migracion 004 - Estandarizacion de naming
+- Renombrar index a position en:
+	- course_modules
+	- lessons
+- Ajustar codigo backend y DTOs para reflejar el cambio.
+
+#### Migracion 005 - Auditoria y negocio evolutivo
+- Crear tabla subscriptions_logs con snapshot de precio y moneda.
+- Evaluar agregar status/deleted_at en users.
+
+
+
+## Explicacion de la Migracion Inicial
+- Archivo creado: backend/src/database/migrations/1700000001001-InitialHardeningWeek12.ts
+- Clase MigrationInterface: define metodos up (aplica cambios) y down (revierte cambios).
+- name: identifica la migracion para TypeORM.
+- up():
+	- UPDATE courses slug: completa slugs nulos con course-id para evitar error al poner NOT NULL + UNIQUE.
+	- UPDATE cursos con slug duplicado: agrega -id a duplicados para garantizar unicidad.
+	- UPDATE owner_id nulo: asigna owner por defecto (primer usuario) para poder poner NOT NULL.
+	- DELETE en tablas hijas con FKs nulas: limpia registros huerfanos antes de endurecer constraints.
+	- CREATE TEMPORARY TABLE tmp_enrollments_keep: calcula fila a conservar por (user_id, course_id).
+	- DELETE duplicados enrollments: elimina filas repetidas y conserva 1 sola.
+	- CREATE TEMPORARY TABLE tmp_progress_keep: calcula fila a conservar por (user_id, lesson_id).
+	- DELETE duplicados lesson_progress: elimina filas repetidas y conserva 1 sola.
+	- CREATE TEMPORARY TABLE tmp_user_points_agg: agrupa puntos por usuario/curso.
+	- UPDATE user_points: deja el total agregado en la fila "keep".
+	- DELETE user_points duplicados: mantiene 1 registro por usuario/curso.
+	- TEMP TABLES de posiciones (modules/lessons): recalcula index por particion para evitar choque al crear UNIQUE compuesto.
+	- ALTER TABLE ... DROP FOREIGN KEY: suelta FK temporalmente para cambiar nullability sin conflicto.
+	- ALTER TABLE ... MODIFY ... NOT NULL: aplica integridad requerida.
+	- ALTER TABLE ... ADD CONSTRAINT FK...: vuelve a crear FKs.
+	- ALTER TABLE ... ADD UNIQUE INDEX: crea reglas de unicidad clave del plan inicial.
+- down():
+	- DROP INDEX de los UNIQUE agregados.
+	- MODIFY columnas a NULL nuevamente para volver al estado previo.
+
+### Comandos para ejecutar migraciones (backend)
+- npm run migration:run
+- npm run migration:revert
+
+
+## ANALISIS DE 5 CONSULTAS CRITICAS Y OPTIMIZACION
+
+### Consulta Critica 1: Catalogo de cursos con filtros
+- Ubicacion: courses.service.ts (findAll)
+- Patron:
+	- JOIN courses + tags + owner
+	- filtros por visibility, q, tag, modality, owner, tier
+- Riesgo:
+	- full scan en courses cuando crezca catalogo.
+- Optimizacion recomendada:
+	- INDEX courses(visibility, modality, tier_required)
+	- INDEX courses(owner_id)
+	- UNIQUE courses(slug)
+	- INDEX tags(name) (ya existe UNIQUE)
+	- INDEX course_tags(tags_id, courses_id)
+
+### Consulta Critica 2: Progreso de curso por usuario
+- Ubicacion: progress.service.ts (getCourseProgress)
+- Patron:
+	- COUNT de lessons por course
+	- JOIN lesson_progress + lessons + modules + course filtrando por user
+- Riesgo:
+	- doble consulta con joins encadenados.
+- Optimizacion recomendada:
+	- UNIQUE lesson_progress(user_id, lesson_id)
+	- INDEX lessons(module_id)
+	- INDEX course_modules(course_id)
+	- INDEX lesson_progress(user_id, lesson_id, completed)
+
+### Consulta Critica 3: Inscripcion y validacion de duplicado
+- Ubicacion: enrollments.service.ts (enroll)
+- Patron:
+	- busca enrollment existente por (course_id, user_id)
+	- inserta si no existe
+- Riesgo:
+	- race condition en concurrencia (doble insert)
+- Optimizacion recomendada:
+	- UNIQUE enrollments(user_id, course_id)
+	- manejar conflicto de insercion en backend (try/catch unique violation)
+
+### Consulta Critica 4: Inicio de intento de quiz
+- Ubicacion: attempts.service.ts (startAttempt)
+- Patron:
+	- COUNT intentos por (quiz_id, user_id)
+	- INSERT nuevo intento
+- Riesgo:
+	- conteo lento sin indice compuesto, especialmente con historial alto.
+- Optimizacion recomendada:
+	- INDEX attempts(quiz_id, user_id)
+	- INDEX attempts(user_id, status)
+
+### Consulta Critica 5: Guardado y validacion de respuestas
+- Ubicacion: attempts.service.ts (addAnswer)
+- Patron:
+	- busca answer por (attempt_id, question_id)
+	- valida question y option
+	- upsert logico de answer
+- Riesgo:
+	- sin indice compuesto, lookup de answers degrada con volumen.
+	- riesgo de inconsistencia semantica question-option.
+- Optimizacion recomendada:
+	- UNIQUE answers(attempt_id, question_id)
+	- INDEX answers(question_id)
+	- validar en backend que option.question_id == answer.question_id
+
+### Evidencia sugerida por consulta critica
+- EXPLAIN antes de optimizar.
+- EXPLAIN despues de optimizar.
+- Tiempo medio de respuesta antes/despues.
+- Registro del indice aplicado.
+
