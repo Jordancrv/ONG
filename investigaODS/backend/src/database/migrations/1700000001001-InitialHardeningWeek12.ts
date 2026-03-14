@@ -4,7 +4,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
   name = 'InitialHardeningWeek121700000001001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1) Data cleanup before tightening constraints.
+    // 1) Limpieza de datos antes de restricciones.
     await queryRunner.query(`
       UPDATE courses
       SET slug = CONCAT('course-', id)
@@ -39,7 +39,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
     await queryRunner.query(`DELETE FROM options WHERE question_id IS NULL`);
     await queryRunner.query(`DELETE FROM user_points WHERE user_id IS NULL OR course_id IS NULL`);
 
-    // 2) Consolidate duplicates before UNIQUE constraints.
+    // 2) Consolidar duplicados antes de aplicar restricciones UNIQUE.
     await queryRunner.query(`
       CREATE TEMPORARY TABLE tmp_enrollments_keep AS
       SELECT MIN(id) AS keep_id, user_id, course_id
@@ -100,7 +100,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
 
     await queryRunner.query(`DROP TEMPORARY TABLE tmp_user_points_agg`);
 
-    // Normalize ordering to avoid conflicts in composite unique constraints.
+    // Normalizar el orden para evitar conflictos en restricciones UNIQUE compuestas.
     await queryRunner.query(`
       CREATE TEMPORARY TABLE tmp_module_positions AS
       SELECT id,
@@ -131,7 +131,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
 
     await queryRunner.query(`DROP TEMPORARY TABLE tmp_lesson_positions`);
 
-    // 3) Drop FK constraints, alter nullability, then re-add FKs.
+    // 3) Eliminar FKs, cambiar nullability y volver a crear FKs.
     await queryRunner.query(`ALTER TABLE subscriptions DROP FOREIGN KEY FK_d0a95ef8a28188364c546eb65c1`);
     await queryRunner.query(`ALTER TABLE subscriptions DROP FOREIGN KEY FK_e45fca5d912c3a2fab512ac25dc`);
     await queryRunner.query(`ALTER TABLE subscriptions MODIFY user_id int NOT NULL`);
@@ -195,7 +195,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE user_points ADD CONSTRAINT FK_b63a87a96091c755b78a75eecbc FOREIGN KEY (user_id) REFERENCES users(id)`);
     await queryRunner.query(`ALTER TABLE user_points ADD CONSTRAINT FK_44f02f2ff7d0ae4bd9be9cd24cf FOREIGN KEY (course_id) REFERENCES courses(id)`);
 
-    // 4) Add unique constraints from Week 1-2 plan.
+    // 4) Agregar restricciones UNIQUE
     await queryRunner.query(`ALTER TABLE courses ADD UNIQUE INDEX UQ_courses_slug (slug)`);
     await queryRunner.query(`ALTER TABLE enrollments ADD UNIQUE INDEX UQ_enrollments_user_course (user_id, course_id)`);
     await queryRunner.query(`ALTER TABLE lesson_progress ADD UNIQUE INDEX UQ_lesson_progress_user_lesson (user_id, lesson_id)`);
@@ -205,7 +205,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop FKs that can depend on composite indexes to avoid ER_DROP_INDEX_FK on MySQL.
+    // Eliminar FKs que pueden depender de indices compuestos para evitar ER_DROP_INDEX_FK en MySQL.
     await queryRunner.query(`ALTER TABLE lessons DROP FOREIGN KEY FK_35fb2307535d90a6ed290af1f4a`);
     await queryRunner.query(`ALTER TABLE course_modules DROP FOREIGN KEY FK_81644557c2401f37fe9e884e884`);
     await queryRunner.query(`ALTER TABLE enrollments DROP FOREIGN KEY FK_ff997f5a39cd24a491b9aca45c9`);
@@ -215,7 +215,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE user_points DROP FOREIGN KEY FK_b63a87a96091c755b78a75eecbc`);
     await queryRunner.query(`ALTER TABLE user_points DROP FOREIGN KEY FK_44f02f2ff7d0ae4bd9be9cd24cf`);
 
-    // Revert unique constraints.
+    // Revertir restricciones UNIQUE.
     await queryRunner.query(`ALTER TABLE lessons DROP INDEX UQ_lessons_module_index`);
     await queryRunner.query(`ALTER TABLE course_modules DROP INDEX UQ_course_modules_course_index`);
     await queryRunner.query(`ALTER TABLE user_points DROP INDEX UQ_user_points_user_course`);
@@ -223,7 +223,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE enrollments DROP INDEX UQ_enrollments_user_course`);
     await queryRunner.query(`ALTER TABLE courses DROP INDEX UQ_courses_slug`);
 
-    // Revert NOT NULL changes.
+    // Revertir cambios de NOT NULL.
     await queryRunner.query(`ALTER TABLE subscriptions MODIFY user_id int NULL`);
     await queryRunner.query(`ALTER TABLE subscriptions MODIFY plan_id int NULL`);
 
@@ -251,7 +251,7 @@ export class InitialHardeningWeek121700000001001 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE user_points MODIFY user_id int NULL`);
     await queryRunner.query(`ALTER TABLE user_points MODIFY course_id int NULL`);
 
-    // Restore dropped FKs (same behavior as schema before this down completes).
+    // Restaurar FKs eliminadas (mismo comportamiento del esquema antes de completar este down).
     await queryRunner.query(`ALTER TABLE course_modules ADD CONSTRAINT FK_81644557c2401f37fe9e884e884 FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE`);
     await queryRunner.query(`ALTER TABLE lessons ADD CONSTRAINT FK_35fb2307535d90a6ed290af1f4a FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE`);
     await queryRunner.query(`ALTER TABLE enrollments ADD CONSTRAINT FK_ff997f5a39cd24a491b9aca45c9 FOREIGN KEY (user_id) REFERENCES users(id)`);
